@@ -33,28 +33,28 @@
 
 */
 
-#include <WiFi.h>       // standard library
-#include <WebServer.h>  // standard library
-#include "SuperMon.h"   // .h file that stores your html page code
+#include <WiFi.h>      // standard library
+#include <WebServer.h> // standard library
+#include "SuperMon.h"  // .h file that stores your html page code
 
-
-// include GPS library 
+// include GPS library
 #include <NMEAGPS.h>
-#include <GPSport.h>
+// #include <GPSport.h>
+NMEAGPS gps; // This parses the GPS characters
+gps_fix fix; // This holds on to the latest values
 
-#if !defined( NMEAGPS_PARSE_RMC ) &  \
-    !defined( NMEAGPS_PARSE_GGA ) &  \
-    !defined( NMEAGPS_PARSE_GLL )
-  #error You must uncomment at least one of NMEAGPS_PARSE_RMC, NMEAGPS_PARSE_GGA or NMEAGPS_PARSE_GLL in NMEAGPS_cfg.h!
+#if !defined(NMEAGPS_PARSE_RMC) & \
+    !defined(NMEAGPS_PARSE_GGA) & \
+    !defined(NMEAGPS_PARSE_GLL)
+#error You must uncomment at least one of NMEAGPS_PARSE_RMC, NMEAGPS_PARSE_GGA or NMEAGPS_PARSE_GLL in NMEAGPS_cfg.h!
 #endif
 
-#if !defined( GPS_FIX_LOCATION )
-  #error You must uncomment GPS_FIX_LOCATION in GPSfix_cfg.h!
+#if !defined(GPS_FIX_LOCATION)
+#error You must uncomment GPS_FIX_LOCATION in GPSfix_cfg.h!
 #endif
 
 // include this as storage location for later...
 #include <EEPROM.h>
-
 
 // here you post web pages to your homes intranet which will make page debugging easier
 // as you just need to refresh the browser as opposed to reconnection to the web server
@@ -68,13 +68,10 @@
 #define AP_SSID "TestWebSite"
 #define AP_PASS "023456789"
 
-
-
-
 // start your defines for pins for sensors, outputs etc.
 #define PIN_OUTPUT 26 // connected to nothing but an example of a digital write from the web page
 #define PIN_FAN 27    // pin 27 and is a PWM signal to control a fan speed
-#define PIN_LED 2     //On board LED
+#define PIN_LED 2     // On board LED
 #define PIN_A0 34     // some analog input sensor
 #define PIN_A1 35     // some analog input sensor
 
@@ -104,54 +101,21 @@ IPAddress ip;
 // gotta create a server
 WebServer server(80);
 
-
-
 // function managed by an .on method to handle slider actions on the web page
 // this example will get the passed string called VALUE and conver to a pwm value
 // and control the fan speed
-void UpdateSlider() {
-
-  // many I hate strings, but wifi lib uses them...
-  String t_state = server.arg("VALUE");
-
-  // conver the string sent from the web page to an int
-  FanSpeed = t_state.toInt();
-  Serial.print("UpdateSlider"); Serial.println(FanSpeed);
-  // now set the PWM duty cycle
-  ledcWrite(0, FanSpeed);
-
-
-  // YOU MUST SEND SOMETHING BACK TO THE WEB PAGE--BASICALLY TO KEEP IT LIVE
-
-  // option 1: send no information back, but at least keep the page live
-  // just send nothing back
-  // server.send(200, "text/plain", ""); //Send web page
-
-  // option 2: send something back immediately, maybe a pass/fail indication, maybe a measured value
-  // here is how you send data back immediately and NOT through the general XML page update code
-  // my simple example guesses at fan speed--ideally measure it and send back real data
-  // i avoid strings at all caost, hence all the code to start with "" in the buffer and build a
-  // simple piece of data
-  FanRPM = map(FanSpeed, 0, 255, 0, 2400);
-  strcpy(buf, "");
-  sprintf(buf, "%d", FanRPM);
-  sprintf(buf, buf);
-
-  // now send it back
-  server.send(200, "text/plain", buf); //Send web page
-
-}
 
 // now process button_0 press from the web site. Typical applications are the used on the web client can
 // turn on / off a light, a fan, disable something etc
-void ProcessButton_0() {
+void ButtonResetDistA()
+{
 
   //
 
-
   LED0 = !LED0;
   digitalWrite(PIN_LED, LED0);
-  Serial.print("Button 0 "); Serial.println(LED0);
+  Serial.print("Button 0 ");
+  Serial.println(LED0);
   // regardless if you want to send stuff back to client or not
   // you must have the send line--as it keeps the page running
   // if you don't want feedback from the MCU--or let the XML manage
@@ -161,7 +125,7 @@ void ProcessButton_0() {
   // here i don't need to send and immediate status, any status
   // like the illumination status will be send in the main XML page update
   // code
-  server.send(200, "text/plain", ""); //Send web page
+  server.send(200, "text/plain", ""); // Send web page
 
   // option 2 -- keep page live AND send a status
   // if you want to send feed back immediataly
@@ -174,23 +138,24 @@ void ProcessButton_0() {
     server.send(200, "text/plain", "0"); //Send web page
     }
   */
-
 }
 
 // same notion for processing button_1
-void ProcessButton_1() {
+void ButtonResetDistB()
+{
 
   // just a simple way to toggle a LED on/off. Much better ways to do this
   Serial.println("Button 1 press");
   SomeOutput = !SomeOutput;
 
   digitalWrite(PIN_OUTPUT, SomeOutput);
-Serial.print("Button 1 "); Serial.println(LED0);
+  Serial.print("Button 1 ");
+  Serial.println(LED0);
   // regardless if you want to send stuff back to client or not
   // you must have the send line--as it keeps the page running
   // if you don't want feedback from the MCU--or send all data via XML use this method
   // sending feeback
-  server.send(200, "text/plain", ""); //Send web page
+  server.send(200, "text/plain", ""); // Send web page
 
   // if you want to send feed back immediataly
   // note you must have proper code in the java script to read this data stream
@@ -204,21 +169,21 @@ Serial.print("Button 1 "); Serial.println(LED0);
   */
 }
 
-
 // code to send the main web page
 // PAGE_MAIN is a large char defined in SuperMon.h
-void SendWebsite() {
+void SendWebsite()
+{
 
   Serial.println("sending web page");
   // you may have to play with this value, big pages need more porcessing time, and hence
   // a longer timeout that 200 ms
   server.send(200, "text/html", PAGE_MAIN);
-
 }
 
 // code to send the main web page
 // I avoid string data types at all cost hence all the char mainipulation code
-void SendXML() {
+void SendXML()
+{
 
   // Serial.println("sending xml");
 
@@ -228,28 +193,32 @@ void SendXML() {
   sprintf(buf, "<B0>%d</B0>\n", BitsA0);
   strcat(XML, buf);
   // send Volts0
-  sprintf(buf, "<V0>%d.%d</V0>\n", (int) (VoltsA0), abs((int) (VoltsA0 * 10)  - ((int) (VoltsA0) * 10)));
+  sprintf(buf, "<V0>%d.%d</V0>\n", (int)(VoltsA0), abs((int)(VoltsA0 * 10) - ((int)(VoltsA0)*10)));
   strcat(XML, buf);
 
   // send bits1
   sprintf(buf, "<B1>%d</B1>\n", BitsA1);
   strcat(XML, buf);
   // send Volts1
-  sprintf(buf, "<V1>%d.%d</V1>\n", (int) (VoltsA1), abs((int) (VoltsA1 * 10)  - ((int) (VoltsA1) * 10)));
+  sprintf(buf, "<V1>%d.%d</V1>\n", (int)(VoltsA1), abs((int)(VoltsA1 * 10) - ((int)(VoltsA1)*10)));
   strcat(XML, buf);
 
   // show led0 status
-  if (LED0) {
+  if (LED0)
+  {
     strcat(XML, "<LED>1</LED>\n");
   }
-  else {
+  else
+  {
     strcat(XML, "<LED>0</LED>\n");
   }
 
-  if (SomeOutput) {
+  if (SomeOutput)
+  {
     strcat(XML, "<SWITCH>1</SWITCH>\n");
   }
-  else {
+  else
+  {
     strcat(XML, "<SWITCH>0</SWITCH>\n");
   }
 
@@ -262,12 +231,11 @@ void SendXML() {
   // you may have to play with this value, big pages need more porcessing time, and hence
   // a longer timeout that 200 ms
   server.send(200, "text/xml", XML);
-
-
 }
 
 // I think I got this code from the wifi example
-void printWifiStatus() {
+void printWifiStatus()
+{
 
   // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
@@ -290,9 +258,11 @@ void printWifiStatus() {
 
 // end of code
 
+void setup()
+{
 
-
-void setup() {
+  // initialize GPS
+  Serial2.begin(9600);
 
   // standard stuff here
   Serial.begin(9600);
@@ -324,11 +294,13 @@ void setup() {
   // if you have this #define USE_INTRANET,  you will connect to your home intranet, again makes debugging easier
 #ifdef USE_INTRANET
   WiFi.begin(LOCAL_SSID, LOCAL_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
-  Serial.print("IP address: "); Serial.println(WiFi.localIP());
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
   Actual_IP = WiFi.localIP();
 #endif
 
@@ -341,11 +313,11 @@ void setup() {
   WiFi.softAPConfig(PageIP, gateway, subnet);
   delay(100);
   Actual_IP = WiFi.softAPIP();
-  Serial.print("IP address: "); Serial.println(Actual_IP);
+  Serial.print("IP address: ");
+  Serial.println(Actual_IP);
 #endif
 
-  printWifiStatus();
-
+  // printWifiStatus();
 
   // these calls will handle data coming back from your web page
   // this one is a page request, upon ESP getting / string the web page will be sent
@@ -360,16 +332,37 @@ void setup() {
   // add as many as you need to process incoming strings from your web page
   // as you can imagine you will need to code some javascript in your web page to send such strings
   // this process will be documented in the SuperMon.h web page code
-  server.on("/UPDATE_SLIDER", UpdateSlider);
-  server.on("/BUTTON_0", ProcessButton_0);
-  server.on("/BUTTON_1", ProcessButton_1);
+  server.on("/BUTTON_0", ButtonResetDistA);
+  server.on("/BUTTON_1", ButtonResetDistB);
 
   // finally begin the server
   server.begin();
-
 }
 
-void loop() {
+void loop()
+{
+
+
+while (gps.available( Serial2 )) {
+    fix = gps.read();
+
+    if (fix.valid.location) {
+    Serial.print( F("Location: ") );
+      Serial.print( fix.latitude(), 6 );
+      Serial.print( ',' );
+      Serial.print( fix.longitude(), 6 );
+    } else {
+      Serial.print("no Location FIX!");
+    }
+
+    if (fix.valid.altitude) {
+    Serial.print( F(", Altitude: ") );
+      Serial.print( fix.altitude() );
+    Serial.println();
+  } else {
+      Serial.print("no Altitude FIX!");
+    }
+}
 
   // you main loop that measures, processes, runs code, etc.
   // note that handling the "on" strings from the web page are NOT in the loop
@@ -378,8 +371,9 @@ void loop() {
   // in my example here every 50 ms, i measure some analog sensor data (my finger dragging over the pins
   // and process accordingly
   // analog input can be from temperature sensors, light sensors, digital pin sensors, etc.
-  if ((millis() - SensorUpdate) >= 50) {
-    //Serial.println("Reading Sensors");
+  if ((millis() - SensorUpdate) >= 50)
+  {
+    // Serial.println("Reading Sensors");
     SensorUpdate = millis();
     BitsA0 = analogRead(PIN_A0);
     BitsA1 = analogRead(PIN_A1);
@@ -387,11 +381,9 @@ void loop() {
     // standard converion to go from 12 bit resolution reads to volts on an ESP
     VoltsA0 = BitsA0 * 3.3 / 4096;
     VoltsA1 = BitsA1 * 3.3 / 4096;
-
   }
 
   // no matter what you must call this handleClient repeatidly--otherwise the web page
   // will not get instructions to do something
   server.handleClient();
-
 }
