@@ -1,41 +1,10 @@
-/*
-
-
-  this example will show
-  1. how to use and ESP 32 for reading pins
-  2. building a web page for a client (web browser, smartphone, smartTV) to connect to
-  3. sending data from the ESP to the client to update JUST changed data
-  4. sending data from the web page (like a slider or button press) to the ESP to tell the ESP to do something
-
-  If you are not familiar with HTML, CSS page styling, and javascript, be patient, these code platforms are
-  not intuitive and syntax is very inconsitent between platforms
-
-  I know of 4 ways to update a web page
-  1. send the whole page--very slow updates, causes ugly page redraws and is what you see in most examples
-  2. send XML data to the web page that will update just the changed data--fast updates but older method
-  3. JSON strings which are similar to XML but newer method
-  4. web sockets very very fast updates, but not sure all the library support is available for ESP's
-
-  I use XML here...
-
-  compile options
-  1. esp32 dev module
-  2. upload speed 921600
-  3. cpu speed 240 mhz
-  flash speed 80 mhz
-  flash mode qio
-  flash size 4mb
-  partition scheme default
-
-
-  NOTE if your ESP fails to program press the BOOT button during programm when the IDE is "looking for the ESP"
-
-
-*/
-
-#include <WiFi.h>      // standard library
+#include <Wifi.h>      // standard library
 #include <WebServer.h> // standard library
 #include "SuperMon.h"  // .h file that stores your html page code
+#include <ArduinoOTA.h> // import OTA
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+
 
 // include GPS library
 #include <NMEAGPS.h>
@@ -80,6 +49,8 @@ gps_fix fix; // This holds on to the latest values
 #define PIN_A0 34     // some analog input sensor
 #define PIN_A1 35     // some analog input sensor
 
+
+#define MAX_LENGTH_TELNET_PW 50
 
 // variables to store measure data and sensor states
 
@@ -335,6 +306,8 @@ void setup()
   // maybe disable watch dog timer 1 if needed
   //  disableCore1WDT();
 
+
+
   // just an update to progress
   Serial.println("starting server");
 
@@ -384,10 +357,52 @@ void setup()
 
   // finally begin the server
   server.begin();
+
+
+  /**
+   * OTA
+   * 
+   */
+  // ArduinoOTA.begin(WiFi.localIP(), "ESP","password", InternalStorage);
+ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else // U_SPIFFS
+        type = "filesystem";
+
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.println("Start updating " + type);
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+
+  ArduinoOTA.begin();
+ 
+
+  Serial.println("Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+
 }
 
 void loop()
 {
+ArduinoOTA.handle();
 
   // Serial2.print(F("Location: "));
   while (gps.available(Serial2))
@@ -405,7 +420,7 @@ void loop()
     }
     else
     {
-      Serial.println("no Location FIX!");
+      Serial.println(", no Location FIX!");
     }
 
     if (fix.valid.altitude)
@@ -416,7 +431,7 @@ void loop()
     }
     else
     {
-      Serial.println("no Altitude FIX!");
+      Serial.println(", no Altitude FIX!");
     }
   }
 
