@@ -4,18 +4,14 @@
 #include <ArduinoOTA.h> // import OTA
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
-
-
-// include GPS library
 #include <NMEAGPS.h>
-// #include <GPSport.h>
+
 NMEAGPS gps; // This parses the GPS characters
 gps_fix fix; // This holds on to the latest values
 
 //Storage: 
 #include <EEPROM.h>
 #define EEPROM_SIZE 12
-
 
 #if !defined(NMEAGPS_PARSE_RMC) & \
     !defined(NMEAGPS_PARSE_GGA) & \
@@ -35,8 +31,9 @@ gps_fix fix; // This holds on to the latest values
 #define USE_INTRANET
 
 // replace this with your homes intranet connect parameters
-#define LOCAL_SSID "LAND_4"
-#define LOCAL_PASS "280389cassiopaia"
+#include ".env"
+// #define LOCAL_SSID "wifi"
+// #define LOCAL_PASS "password"
 
 // once  you are read to go live these settings are what you client will connect to
 #define AP_SSID "TestWebSite"
@@ -244,7 +241,7 @@ if(fix.valid.location) {
   sprintf(buf, "<POSITION>%d.%d, %d.%d</POSITION>\n", (int) (lat), abs((int) (lat * 10000)  - ((int) (lat) * 10000)),  (int) (lon), abs((int) (lon * 10000)  - ((int) (lon) * 10000)));
   strcat(XML, buf);
 } else {
-    sprintf(buf, "<POSITION>no Fix</POSITION>\n");
+    sprintf(buf, "<POSITION>no position Fix</POSITION>\n");
   strcat(XML, buf);
 }
 
@@ -286,9 +283,6 @@ void printWifiStatus()
 
 void setup()
 {
-
-  // initialize GPS
-
 
   // Serial.begin(9600, SERIAL_8N1, 25, 27);
   Serial.begin(9600);
