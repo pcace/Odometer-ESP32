@@ -43,6 +43,11 @@
 NMEAGPS gps; // This parses the GPS characters
 gps_fix fix; // This holds on to the latest values
 
+//Storage: 
+#include <EEPROM.h>
+#define EEPROM_SIZE 12
+
+
 #if !defined(NMEAGPS_PARSE_RMC) & \
     !defined(NMEAGPS_PARSE_GGA) & \
     !defined(NMEAGPS_PARSE_GLL)
@@ -75,16 +80,20 @@ gps_fix fix; // This holds on to the latest values
 #define PIN_A0 34     // some analog input sensor
 #define PIN_A1 35     // some analog input sensor
 
+
 // variables to store measure data and sensor states
-int BitsA0 = 0, BitsA1 = 0;
-float VoltsA0 = 0, VoltsA1 = 0;
-int FanSpeed = 0;
-bool LED0 = false, SomeOutput = false;
-uint32_t SensorUpdate = 0;
-int FanRPM = 0;
+
+float distA = 1; // EEPROM Adress: 0
+float distB = 2; // EEPROM Adress: 1
+float totalDist = 30; // EEPROM Adress: 2
+float totalTime = 04; // EEPROM Adress: 3
+float dailyTime = 5; // EEPROM Adress: 4
+float dailyDist = 6; // EEPROM Adress: 5
+float speed = 11;
+int32_t lat, lon = 0;
 
 // the XML array size needs to be bigger that your maximum expected size. 2048 is way too big for this example
-char XML[2048];
+char XML[4096];
 
 // just some buffer holder for char operations
 char buf[32];
@@ -110,12 +119,11 @@ WebServer server(80);
 void ButtonResetDistA()
 {
 
+  Serial.println("ButtonA press-++++++++++++++++++++++++++++++++");
   //
-
-  LED0 = !LED0;
-  digitalWrite(PIN_LED, LED0);
-  Serial.print("Button 0 ");
-  Serial.println(LED0);
+distA = distA*2;
+  // Serial2.print("Button 0 ");
+  // Serial2.println(LED0);
   // regardless if you want to send stuff back to client or not
   // you must have the send line--as it keeps the page running
   // if you don't want feedback from the MCU--or let the XML manage
@@ -145,16 +153,12 @@ void ButtonResetDistB()
 {
 
   // just a simple way to toggle a LED on/off. Much better ways to do this
-  Serial.println("Button 1 press");
-  SomeOutput = !SomeOutput;
-
-  digitalWrite(PIN_OUTPUT, SomeOutput);
-  Serial.print("Button 1 ");
-  Serial.println(LED0);
+  Serial.println("ButtonB press-++++++++++++++++++++++++++++++++");
   // regardless if you want to send stuff back to client or not
   // you must have the send line--as it keeps the page running
   // if you don't want feedback from the MCU--or send all data via XML use this method
   // sending feeback
+distB = distB + 3.6323;
   server.send(200, "text/plain", ""); // Send web page
 
   // if you want to send feed back immediataly
@@ -184,49 +188,100 @@ void SendWebsite()
 // I avoid string data types at all cost hence all the char mainipulation code
 void SendXML()
 {
+  /**
+   * distA = 0;
+  distB = 0;
+  totalDist = 0;
+  totalTime = 0;
+  dailyTime = 0;
+  dailyDist = 0;
+  speed = 0;
+   *
+   */
+  // Serial2.println("sending xml");
 
-  // Serial.println("sending xml");
+  /**
+   * send float: 
+   *   sprintf(buf, "<V0>%d.%d</V0>\n", (int) (VoltsA0), abs((int) (VoltsA0 * 10)  - ((int) (VoltsA0) * 10)));
+   * 
+   */
 
   strcpy(XML, "<?xml version = '1.0'?>\n<Data>\n");
 
-  // send bitsA0
-  sprintf(buf, "<B0>%d</B0>\n", BitsA0);
-  strcat(XML, buf);
-  // send Volts0
-  sprintf(buf, "<V0>%d.%d</V0>\n", (int)(VoltsA0), abs((int)(VoltsA0 * 10) - ((int)(VoltsA0)*10)));
-  strcat(XML, buf);
 
-  // send bits1
-  sprintf(buf, "<B1>%d</B1>\n", BitsA1);
+if(fix.valid.speed) {
+  sprintf(buf, "<SPEED>%d.%d</SPEED>\n", (int) (speed), abs((int) (speed * 10)  - ((int) (speed) * 10)));
   strcat(XML, buf);
-  // send Volts1
-  sprintf(buf, "<V1>%d.%d</V1>\n", (int)(VoltsA1), abs((int)(VoltsA1 * 10) - ((int)(VoltsA1)*10)));
+} else {
+    sprintf(buf, "<SPEED>no Fix</SPEED>\n");
   strcat(XML, buf);
+}
 
-  // show led0 status
-  if (LED0)
-  {
-    strcat(XML, "<LED>1</LED>\n");
-  }
-  else
-  {
-    strcat(XML, "<LED>0</LED>\n");
-  }
+if(fix.valid.location) {
+  sprintf(buf, "<DISTA>%d.%d</DISTA>\n", (int) (distA), abs((int) (distA * 10)  - ((int) (distA) * 10)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<DISTA>no Fix</DISTA>\n");
+  strcat(XML, buf);
+}
 
-  if (SomeOutput)
-  {
-    strcat(XML, "<SWITCH>1</SWITCH>\n");
-  }
-  else
-  {
-    strcat(XML, "<SWITCH>0</SWITCH>\n");
-  }
+if(fix.valid.location) {
+  sprintf(buf, "<DISTB>%d.%d</DISTB>\n", (int) (distB), abs((int) (distB * 10)  - ((int) (distB) * 10)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<DISTB>no Fix</DISTB>\n");
+  strcat(XML, buf);
+}
+
+if(fix.valid.location) {
+  sprintf(buf, "<TOTALDIST>%d.%d</TOTALDIST>\n",  (int) (totalDist), abs((int) (totalDist * 10)  - ((int) (totalDist) * 10)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<TOTALDIST>no Fix</TOTALDIST>\n");
+  strcat(XML, buf);
+}
+
+
+if(fix.valid.date && fix.valid.time) {
+  sprintf(buf, "<TOTALTIME>%d.%d</TOTALTIME>\n",  (int) (totalTime), abs((int) (totalTime * 10)  - ((int) (totalTime) * 10)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<TOTALTIME>no Fix</TOTALTIME>\n");
+  strcat(XML, buf);
+}
+
+
+if(fix.valid.date && fix.valid.time) {
+  sprintf(buf, "<DAILYTIME>%d.%d</DAILYTIME>\n",  (int) (dailyTime), abs((int) (dailyTime * 10)  - ((int) (dailyTime) * 10)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<DAILYTIME>no Fix</DAILYTIME>\n");
+  strcat(XML, buf);
+}
+
+
+if(fix.valid.location) {
+  sprintf(buf, "<DAILYDIST>%d.%d</DAILYDIST>\n", (int) (dailyDist), abs((int) (dailyDist * 10)  - ((int) (dailyDist) * 10)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<DAILYDIST>no Fix</DAILYDIST>\n");
+  strcat(XML, buf);
+}
+
+
+if(fix.valid.location) {
+  sprintf(buf, "<POSITION>%d.%d, %d.%d</POSITION>\n", (int) (lat), abs((int) (lat * 10000)  - ((int) (lat) * 10000)),  (int) (lon), abs((int) (lon * 10000)  - ((int) (lon) * 10000)));
+  strcat(XML, buf);
+} else {
+    sprintf(buf, "<POSITION>no Fix</POSITION>\n");
+  strcat(XML, buf);
+}
 
   strcat(XML, "</Data>\n");
   // wanna see what the XML code looks like?
   // actually print it to the serial monitor and use some text editor to get the size
   // then pad and adjust char XML[2048]; above
-  Serial.println(XML);
+  // Serial2.println(XML);
 
   // you may have to play with this value, big pages need more porcessing time, and hence
   // a longer timeout that 200 ms
@@ -262,22 +317,14 @@ void setup()
 {
 
   // initialize GPS
-  Serial2.begin(9600);
 
-  // standard stuff here
+
+  // Serial.begin(9600, SERIAL_8N1, 25, 27);
   Serial.begin(9600);
 
-  pinMode(PIN_FAN, OUTPUT);
-  pinMode(PIN_LED, OUTPUT);
 
-  // turn off led
-  LED0 = false;
-  digitalWrite(PIN_LED, LED0);
-
-  // configure LED PWM functionalitites
-  ledcSetup(0, 10000, 8);
-  ledcAttachPin(PIN_FAN, 0);
-  ledcWrite(0, FanSpeed);
+  // standard stuff here
+  Serial2.begin(9600);
 
   // if your web page or XML are large, you may not get a call back from the web page
   // and the ESP will think something has locked up and reboot the ESP
@@ -342,27 +389,36 @@ void setup()
 void loop()
 {
 
-
-while (gps.available( Serial2 )) {
+  // Serial2.print(F("Location: "));
+  while (gps.available(Serial2))
+  
+  {
     fix = gps.read();
 
-    if (fix.valid.location) {
-    Serial.print( F("Location: ") );
-      Serial.print( fix.latitude(), 6 );
-      Serial.print( ',' );
-      Serial.print( fix.longitude(), 6 );
-    } else {
-      Serial.print("no Location FIX!");
+    if (fix.valid.location)
+    {
+
+      Serial.print(F("Location: "));
+      Serial.print(fix.latitude(), 6);
+      Serial.print(',');
+      Serial.print(fix.longitude(), 6);
+    }
+    else
+    {
+      Serial.println("no Location FIX!");
     }
 
-    if (fix.valid.altitude) {
-    Serial.print( F(", Altitude: ") );
-      Serial.print( fix.altitude() );
-    Serial.println();
-  } else {
-      Serial.print("no Altitude FIX!");
+    if (fix.valid.altitude)
+    {
+      Serial.print(F(", Altitude: "));
+      Serial.print(fix.altitude());
+      Serial.println();
     }
-}
+    else
+    {
+      Serial.println("no Altitude FIX!");
+    }
+  }
 
   // you main loop that measures, processes, runs code, etc.
   // note that handling the "on" strings from the web page are NOT in the loop
@@ -371,17 +427,6 @@ while (gps.available( Serial2 )) {
   // in my example here every 50 ms, i measure some analog sensor data (my finger dragging over the pins
   // and process accordingly
   // analog input can be from temperature sensors, light sensors, digital pin sensors, etc.
-  if ((millis() - SensorUpdate) >= 50)
-  {
-    // Serial.println("Reading Sensors");
-    SensorUpdate = millis();
-    BitsA0 = analogRead(PIN_A0);
-    BitsA1 = analogRead(PIN_A1);
-
-    // standard converion to go from 12 bit resolution reads to volts on an ESP
-    VoltsA0 = BitsA0 * 3.3 / 4096;
-    VoltsA1 = BitsA1 * 3.3 / 4096;
-  }
 
   // no matter what you must call this handleClient repeatidly--otherwise the web page
   // will not get instructions to do something

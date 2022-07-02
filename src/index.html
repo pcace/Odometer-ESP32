@@ -214,9 +214,11 @@
             <table border=5 bordercolor = red>
                 <tr>
                   <td>
-                <div class="valueSmall">    Uhrzeit
+                <div class="valueSmall" id="time">    Uhrzeit </div>
+                <div class="valueSmall" id="date">    Date</div>
+                <div class="valueSmall" id="position">    Position</div>
             
-               Position</div>
+           
                     
 
                   </td>
@@ -229,17 +231,17 @@
                             <td><div class="valueSmall" id="distA"> 88.88 km/h</div></td>
                             <td> <button type="button" class = "btn" id = "btn0" onclick="ButtonResetDistA()">Reset</button></td>
                         <tr>
-                            <td><div class="category" id="distB"> Distanz B </div></td>
-                            <td><div class="valueSmall"> 88.88 km/h</div></td>
+                            <td><div class="category"> Distanz B </div></td>
+                            <td><div class="valueSmall" id="distB"> 88.88 km/h</div></td>
                             <td> <button type="button" class = "btn" id = "btn1" onclick="ButtonResetDistB()">Reset</button></td>
                         <tr>    
-                            <td><div class="category" id="totalDist"> GesamtKM </div></td>
-                            <td><div class="valueSmall">88.88 km/h</div></td>
+                            <td><div class="category"> GesamtKM </div></td>
+                            <td><div class="valueSmall" id="totalDist">88.88 km/h</div></td>
                             <td></td>
                         </td>
                         <tr>
-                            <td><div class="category" id="totalTime"> GesamtH </div></td>
-                            <td><div class="valueSmall">88.88 h</div></td>
+                            <td><div class="category"> GesamtH </div></td>
+                            <td><div class="valueSmall" id="totalTime">88.88 h</div></td>
                             <td></td> 
                     </table>
                   </td>
@@ -251,7 +253,7 @@
             <table border=5 bordercolor = red>
               <tr>
                 <td>
-                   <div class="valueBig" id="speed"> 88.88</div>
+                   <div class="valueBig" id="speed">88.88</div>
                 </td>
               </tr>
               <tr>
@@ -263,12 +265,12 @@
                 <td>
                     <table border=5 bordercolor = red>
                         <tr>
-                          <td><div class="category" id="dailyTime">Fahrzeit </div></td>
-                          <td><div class="valueSmall"> 88.88 h</div></td>
+                          <td><div class="category">Fahrzeit </div></td>
+                          <td><div class="valueSmall"  id="dailyTime"> 88.88 h</div></td>
                         </tr>
                         <tr>
-                          <td><div class="category" id="dailyDist">TagesKM </div></td>
-                          <td><div class="valueSmall"> 88.88 km/h </div></td>
+                          <td><div class="category" >TagesKM </div></td>
+                          <td><div class="valueSmall" id="dailyDist"> 88.88 km/h </div></td>
                         </tr>
                       </table>
 
@@ -341,90 +343,51 @@
     // function to handle the response from the ESP
     function response() {
       var message;
-      var barwidth;
-      var currentsensor;
       var xmlResponse;
       var xmldoc;
       var dt = new Date();
-      var color = "#e8e8e8";
 
       // get the xml stream
       xmlResponse = xmlHttp.responseXML;
 
       // get host date and time
-      document.getElementById("time").innerHTML = dt.toLocaleTimeString();
-      document.getElementById("date").innerHTML = dt.toLocaleDateString();
+      document.getElementById("time").innerText = dt.toLocaleTimeString();
+      document.getElementById("date").innerText = dt.toLocaleDateString();
 
-      // A0
-      xmldoc = xmlResponse.getElementsByTagName("B0"); //bits for A0
+
+      xmldoc = xmlResponse.getElementsByTagName("SPEED");
       message = xmldoc[0].firstChild.nodeValue;
-
-      if (message > 2048) {
-        color = "#aa0000";
-      } else {
-        color = "#0000aa";
-      }
-
-      barwidth = message / 40.95;
-      document.getElementById("b0").innerHTML = message;
-      document.getElementById("b0").style.width = barwidth + "%";
-      // if you want to use global color set above in <style> section
-      // other wise uncomment and let the value dictate the color
-      //document.getElementById("b0").style.backgroundColor=color;
-      //document.getElementById("b0").style.borderRadius="5px";
-
-      xmldoc = xmlResponse.getElementsByTagName("V0"); //volts for A0
+      document.getElementById("speed").innerText = message;
+ 
+      xmldoc = xmlResponse.getElementsByTagName("DISTA");
       message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("v0").innerHTML = message;
-      document.getElementById("v0").style.width = barwidth + "%";
-      // you can set color dynamically, maybe blue below a value, red above
-      document.getElementById("v0").style.backgroundColor = color;
-      //document.getElementById("v0").style.borderRadius="5px";
-
-      // A1
-      xmldoc = xmlResponse.getElementsByTagName("B1");
+      document.getElementById("distA").innerText = message;
+ 
+      xmldoc = xmlResponse.getElementsByTagName("DISTB");
       message = xmldoc[0].firstChild.nodeValue;
-      if (message > 2048) {
-        color = "#aa0000";
-      } else {
-        color = "#0000aa";
-      }
-      document.getElementById("b1").innerHTML = message;
-      width = message / 40.95;
-      document.getElementById("b1").style.width = width + "%";
-      document.getElementById("b1").style.backgroundColor = color;
-      //document.getElementById("b1").style.borderRadius="5px";
-
-      xmldoc = xmlResponse.getElementsByTagName("V1");
+      document.getElementById("distB").innerText = message;
+ 
+      xmldoc = xmlResponse.getElementsByTagName("TOTALDIST");
       message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("v1").innerHTML = message;
-      document.getElementById("v1").style.width = width + "%";
-      document.getElementById("v1").style.backgroundColor = color;
-      //document.getElementById("v1").style.borderRadius="5px";
-
-      xmldoc = xmlResponse.getElementsByTagName("LED");
+      document.getElementById("totalDist").innerText = message;
+ 
+      xmldoc = xmlResponse.getElementsByTagName("TOTALTIME");
       message = xmldoc[0].firstChild.nodeValue;
-
-      if (message == 0) {
-        document.getElementById("btn0").innerHTML = "Turn ON";
-      } else {
-        document.getElementById("btn0").innerHTML = "Turn OFF";
-      }
-
-      xmldoc = xmlResponse.getElementsByTagName("SWITCH");
+      document.getElementById("totalTime").innerText = message;
+ 
+      xmldoc = xmlResponse.getElementsByTagName("DAILYTIME");
       message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("switch").style.backgroundColor =
-        "rgb(200,200,200)";
-      // update the text in the table
-      if (message == 0) {
-        document.getElementById("switch").innerHTML = "Switch is OFF";
-        document.getElementById("btn1").innerHTML = "Turn ON";
-        document.getElementById("switch").style.color = "#0000AA";
-      } else {
-        document.getElementById("switch").innerHTML = "Switch is ON";
-        document.getElementById("btn1").innerHTML = "Turn OFF";
-        document.getElementById("switch").style.color = "#00AA00";
-      }
+      document.getElementById("dailyTime").innerText = message;
+
+ 
+      xmldoc = xmlResponse.getElementsByTagName("DAILYDIST");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("dailyDist").innerText = message;
+ 
+      xmldoc = xmlResponse.getElementsByTagName("POSITION");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("position").innerText = message;
+ 
     }
 
     // general processing code for the web page to ask for an XML steam
