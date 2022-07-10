@@ -1,7 +1,7 @@
 /*
 
 
-  OK, ya ready for some fun? HTML + CSS styling + javascript all in and undebuggable environment
+  OK, ya ready for some fun HTML + CSS styling + javascript all in and undebuggable environment
 
   one trick I've learned to how to debug HTML and CSS code.
 
@@ -409,8 +409,10 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       var xmldoc;
       var dt = new Date();
 
-      // get the xml stream
+
       xmlResponse = xmlHttp.responseXML;
+if(xmlResponse){
+      // console.log("xmlResponse", xmlResponse)
 
       // get host date and time
       document.getElementById("time").innerText = dt.toLocaleTimeString();
@@ -418,38 +420,46 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
 
 
       xmldoc = xmlResponse.getElementsByTagName("SPEED");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("speed").innerText = message;
- 
+ }
       xmldoc = xmlResponse.getElementsByTagName("DISTA");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("distA").innerText = message;
- 
+ }
       xmldoc = xmlResponse.getElementsByTagName("DISTB");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("distB").innerText = message;
- 
+ }
       xmldoc = xmlResponse.getElementsByTagName("TOTALDIST");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("totalDist").innerText = message;
- 
+ }
       xmldoc = xmlResponse.getElementsByTagName("TOTALTIME");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("totalTime").innerText = message;
- 
+ }
       xmldoc = xmlResponse.getElementsByTagName("DAILYTIME");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("dailyTime").innerText = message;
-
+}
  
       xmldoc = xmlResponse.getElementsByTagName("DAILYDIST");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("dailyDist").innerText = message;
- 
+ }
       xmldoc = xmlResponse.getElementsByTagName("POSITION");
+      if(xmldoc){
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("position").innerText = message;
- 
+ }}
     }
 
     // general processing code for the web page to ask for an XML steam
@@ -469,9 +479,6 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
     }
   </script>
 </html>
-
-
-
 
 
 
