@@ -11,6 +11,7 @@
 
   No clue how to debug javascrip other that write, compile, upload, refresh, guess, repeat
 
+ 
   I'm using class designators to set styles and id's for data updating
   for example:
   the CSS class .tabledata defines with the cell will look like

@@ -6,12 +6,10 @@
 #include <WiFiUdp.h>
 #include <NMEAGPS.h>
 
-#include "DebugClass.h"        
+#include "DebugClass.h"
 uint32_t aktMillis, lastMillis, lastMillis_h;
 // const uint32_t INTERVALL = 1 * 10 * 1000;  // 1 Minute
-const uint32_t INTERVALL = 1000;  // 1 Minute
-
-
+const uint32_t INTERVALL = 1000; // 1 Minute
 
 NMEAGPS gps;                 // This parses the GPS characters
 gps_fix currentFix, prevFix; // This holds on to the latest values
@@ -41,7 +39,6 @@ gps_fix currentFix, prevFix; // This holds on to the latest values
 
 #define HOST_NAME "ESP_Tacho"
 
-
 // variables to store measure data and sensor states
 
 float distA = 1;      // EEPROM Adress: 0
@@ -51,8 +48,9 @@ float totalTime = 04; // EEPROM Adress: 3
 float dailyTime = 5;  // EEPROM Adress: 4
 float dailyDist = 6;  // EEPROM Adress: 5
 float speed = 11;
-float currentLat, currentLon = 0;
-float prevLat, prevLon = 0;
+int32_t currentLat, currentLon = 0;
+int32_t prevLat, prevLon = 0;
+bool hadFix = false;
 
 char XML[2048];
 
@@ -68,7 +66,7 @@ WebServer server(80);
 void ButtonResetDistA()
 {
 
-  Serial.println("ButtonA press-++++++++++++++++++++++++++++++++");
+  Debug.println("ButtonA press-++++++++++++++++++++++++++++++++");
   distA = distA * 2;
   server.send(200, "text/plain", ""); // Send web page
 }
@@ -76,14 +74,14 @@ void ButtonResetDistA()
 void ButtonResetDistB()
 {
 
-  Serial.println("ButtonB press-++++++++++++++++++++++++++++++++");
+  Debug.println("ButtonB press-++++++++++++++++++++++++++++++++");
   server.send(200, "text/plain", ""); // Send web page
 }
 
 void SendWebsite()
 {
 
-  Serial.println("sending web page");
+  Debug.println("sending web page");
   server.send(200, "text/html", PAGE_MAIN);
 }
 
@@ -210,7 +208,6 @@ void printWifiStatus()
 void setup()
 {
 
-
   uint8_t counter = 0;
 
   // get the stack sizes
@@ -288,9 +285,7 @@ void setup()
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-
   Debug.begin(HOST_NAME);
-
 }
 
 void loop()
@@ -304,59 +299,78 @@ void loop()
   {
     currentFix = gps.read();
 
-    speed = currentFix.speed_kph();
-    Debug.print("speed: ");
-    Debug.println(speed);
+    // speed = currentFix.speed_kph();
+    // Debug.print("speed: ");
+    // Serial.print("speed: ");
+    // Debug.println(speed);
+    // // Serial.println(speed);
+
+    // Debug.println("Sattelites");
+    // Debug.print(currentFix.satellites);
+
+    // Debug.println("hdop");
+    // Debug.print(currentFix.hdop);
+    // Debug.println("vdop");
+    // Debug.print(currentFix.vdop);
 
     if (currentFix.valid.location)
     {
-      currentLat = currentFix.latitude();
-      currentLon = currentFix.longitude();
-
+      currentLat = currentFix.location.lat();
+      currentLon = currentFix.location.lon();
       if ((currentLat != prevLat) && (currentLon != prevLon))
       {
+        if (hadFix) // prevent 0 prevFix with current location the first time it has a fix
+        {
+          Debug.println(distA);
+          Debug.println(currentLat);
+          Debug.println(prevLat);
+          Debug.println(currentLon);
+          Debug.println(prevLon);
+          distA = distA + currentFix.location.DistanceKm(prevFix.location);
+        }
         prevLat = currentLat;
         prevLon = currentLon;
-
-        distA = currentFix.location.DistanceKm(prevFix.location);
+        hadFix = true;
       }
-      Debug.print("dist: ");
-      Debug.println(distA);
-      Debug.print(F("Location: "));
-      Debug.print(currentFix.latitude(), 6);
-      Debug.print(',');
-      Debug.print(currentFix.longitude(), 6);
+
+      Debug.print(distA);
+      Debug.println(F(" km"));
+
+      // Debug.print("dist: ");
+      // Debug.println(distA);
+      // Debug.print(F("Location: "));
+      // Debug.print(currentFix.latitude(), 6);
+      // Debug.print(',');
+      // Debug.print(currentFix.longitude(), 6);
     }
     else
     {
       Debug.println(", no Location currentFix!");
+      Serial.println(", no Location currentFix!");
     }
 
-    if (currentFix.valid.altitude)
-    {
-      Debug.print(F(", Altitude: "));
-      Debug.print(currentFix.altitude());
-      Debug.println();
-    }
-    else
-    {
-      Debug.println(", no Altitude FIX!");
-    }
-
+    //   if (currentFix.valid.altitude)
+    //   {
+    //     Debug.print(F(", Altitude: "));
+    //     Serial.print(F(", Altitude: "));
+    //     Debug.print(currentFix.altitude());
+    //     Serial.print(currentFix.altitude());
+    //     Debug.println();
+    //     Serial.println();
+    //   }
+    //   else
+    //   {
+    //     Debug.println(", no Altitude FIX!");
+    //     Serial.println(", no Altitude FIX!");
+    //   }
   }
-  
-// Debug-Handler
+
+  // Debug-Handler
   Debug.handle();
   aktMillis = millis();
-  if (aktMillis - lastMillis >= INTERVALL) {
+  if (aktMillis - lastMillis >= INTERVALL)
+  {
     // Debug.print("Debug.print");
-    // Debug.println("Debug.println");
-    // Debug.println("Debug.println");
-    // Debug.printf("%lu %s\n",micros(),"Test");
-    // debPrint("debPrint");
-    // debPrintln("debPrintln");
-    // debPrintln("debPrintln");
-    // debPrintf("%lu %s\n",micros(),"Test");
     lastMillis = aktMillis;
   }
   server.handleClient();
