@@ -11,7 +11,7 @@
 
   No clue how to debug javascrip other that write, compile, upload, refresh, guess, repeat
 
- 
+
   I'm using class designators to set styles and id's for data updating
   for example:
   the CSS class .tabledata defines with the cell will look like
@@ -56,7 +56,7 @@
 
 */
 
-// note R"KEYWORD( html page code )KEYWORD"; 
+// note R"KEYWORD( html page code )KEYWORD";
 // again I hate strings, so char is it and this method let's us write naturally
 
 const char PAGE_MAIN[] PROGMEM = R"=====(
@@ -66,195 +66,76 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
   <title>Tacho / Odometer</title>
 
   <style>
-    body,
     html {
+      padding: 0;
       height: 100%;
-    }
-
-    table {
-
       width: 100%;
-      border-spacing: 0px;
     }
 
-    /* tr {
-      border: 0px solid white;
-      font-family: "Verdana", "Arial", sans-serif;
-      font-size: 10;
-    } 
-        th {
+    body,
+    .outer {
+      height: 100%;
+      width: 100%;
+    }
+    .inner {
+      height: 100%;
+      width: 100%;
+    }
+    table {
+      height: 100%;
+      width: 100%;
+    }
+    div {
+      padding: 0px 0px;
+    }
+
+    /* td {
       height: 20px;
       padding: 3px 15px;
-      background-color: #343a40;
-      color: #ffffff !important;
-    }
-    */
-    td {
-      height: 20px;
-      padding: 3px 15px;
-    }
+    } */
     .btn {
-      background-color: #444444;
+      background-color: #000000;
       border: none;
-      
+
       color: white;
       padding: 10px 20px;
       text-align: center;
       text-decoration: none;
       display: inline-block;
-      font-size: 16px;
+      font-size: 5vmin;
       margin: 4px 2px;
       cursor: pointer;
     }
+
     .category {
       font-family: "Verdana", "Arial", sans-serif;
       font-weight: bold;
-      font-size: 28px;
-      line-height: 50px;
-      padding: 20px 10px 0px 10px;
+      font-size: 2vmin;
+
+      /* line-height: 50px; */
+      padding: 0px 0px 0px 0px;
       color: #000000;
     }
     .valueSmall {
       font-family: "Verdana", "Arial", sans-serif;
       font-weight: bold;
-      font-size: 40px;
-      line-height: 50px;
-      padding: 20px 10px 0px 10px;
+      font-size: 8vmin;
+      /* line-height: 50px; */
+      padding: 0px 0px 0px 0px;
       color: #000000;
     }
     .valueBig {
       font-family: "Verdana", "Arial", sans-serif;
+      vertical-align: top;
+
       font-weight: bold;
-      font-size: 100px;
-      line-height: 150px;
-      padding: 20px 10px 0px 10px;
+      font-size: 20vmin;
+      /* line-height: 150px; */
+      padding: 0px 0px 0px 0px;
+      margin: 0px 0px 0px 0px;
       color: #000000;
     }
-
   </style>
-
-  <!-- <style>
-
-
-
-
-
-
-    .fanrpmslider {
-      width: 30%;
-      height: 55px;
-      outline: none;
-      height: 25px;
-    }
-    .bodytext {
-      font-family: "Verdana", "Arial", sans-serif;
-      /* font-size: clamp(1rem, -0.8750rem + 8.3333vw, 3.5rem); */
-
-      text-align: left;
-      font-weight: light;
-      border-radius: 5px;
-      display: inline;
-    }
-    .navbar {
-      width: 100%;
-      height: 50px;
-      margin: 0;
-      padding: 10px 0px;
-      background-color: #fff;
-      color: #000000;
-      border-bottom: 5px solid #293578;
-    }
-    .fixed-top {
-      position: fixed;
-      top: 0;
-      right: 0;
-      left: 0;
-      z-index: 1030;
-    }
-    .navtitle {
-      float: left;
-      height: 50px;
-      font-family: "Verdana", "Arial", sans-serif;
-      font-size: 50px;
-      font-weight: bold;
-      line-height: 50px;
-      padding-left: 20px;
-    }
-    .navheading {
-      position: fixed;
-      left: 60%;
-      height: 50px;
-      font-family: "Verdana", "Arial", sans-serif;
-      font-size: 20px;
-      font-weight: bold;
-      line-height: 20px;
-      padding-right: 20px;
-    }
-    .navdata {
-      justify-content: flex-end;
-      position: fixed;
-      left: 70%;
-      height: 50px;
-      font-family: "Verdana", "Arial", sans-serif;
-      font-size: 20px;
-      font-weight: bold;
-      line-height: 20px;
-      padding-right: 20px;
-    }
-    .category {
-      font-family: "Verdana", "Arial", sans-serif;
-      font-weight: bold;
-      font-size: 32px;
-      line-height: 50px;
-      padding: 20px 10px 0px 10px;
-      color: #000000;
-    }
-    .heading {
-      font-family: "Verdana", "Arial", sans-serif;
-      font-weight: normal;
-      font-size: 28px;
-      text-align: left;
-    }
-
-    .btn {
-      background-color: #444444;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 16px;
-      margin: 4px 2px;
-      cursor: pointer;
-    }
-    .foot {
-      font-family: "Verdana", "Arial", sans-serif;
-      font-size: 20px;
-      position: relative;
-      height: 30px;
-      text-align: center;
-      color: #aaaaaa;
-      line-height: 20px;
-    }
-    .container {
-      max-width: 1800px;
-      margin: 0 auto;
-    }
-    table tr:first-child th:first-child {
-      border-top-left-radius: 5px;
-    }
-    table tr:first-child th:last-child {
-      border-top-right-radius: 5px;
-    }
-    table tr:last-child td:first-child {
-      border-bottom-left-radius: 5px;
-    }
-    table tr:last-child td:last-child {
-      border-bottom-right-radius: 5px;
-    }
-  </style> -->
-
 
   <!-- 
     ids: 
@@ -270,81 +151,107 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
 
   <body style="background-color: #efefef" onload="process()">
     <!-- div container fullscreen -->
-    <div style="height: 100%" class="fullscreen">
-      <table>
-        <tr>
-          <td>
-            <table border=5 bordercolor = red>
+    <div class="outer">
+      <div class="inner">
+        <table style="background-color: rgb(151, 151, 151)">
+          <tr style="background-color: rgb(210, 210, 210)">
+            <td style="width: 40%">
+              <table>
                 <tr>
                   <td>
-                <div class="valueSmall" id="time">    Uhrzeit </div>
-                <div class="valueSmall" id="date">    Date</div>
-                <div class="valueSmall" id="position">    Position</div>
-            
-           
-                    
-
+                    <div class="valueSmall" id="time">time</div>
+                    <div class="valueSmall" id="date">date</div>
+                    <div class="valueSmall" id="position">position</div>
                   </td>
                 </tr>
                 <tr>
                   <td>
-                    <table border=5 bordercolor = red>
-                        <tr>
-                            <td><div class="category"> Distanz A </div></td>
-                            <td><div class="valueSmall" id="distA"> 88.88 km/h</div></td>
-                            <td> <button type="button" class = "btn" id = "btn0" onclick="ButtonResetDistA()">Reset</button></td>
-                        <tr>
-                            <td><div class="category"> Distanz B </div></td>
-                            <td><div class="valueSmall" id="distB"> 88.88 km/h</div></td>
-                            <td> <button type="button" class = "btn" id = "btn1" onclick="ButtonResetDistB()">Reset</button></td>
-                        <tr>    
-                            <td><div class="category"> GesamtKM </div></td>
-                            <td><div class="valueSmall" id="totalDist">88.88 km/h</div></td>
-                            <td></td>
+                    <table>
+                      <tr>
+                        <td><div class="category">dist A</div></td>
+                        <td>
+                          <div class="valueSmall" id="distA">88.88</div>
                         </td>
-                        <tr>
-                            <td><div class="category"> GesamtH </div></td>
-                            <td><div class="valueSmall" id="totalTime">88.88 h</div></td>
-                            <td></td> 
+                        <td>
+                          <button
+                            type="button"
+                            class="btn"
+                            id="btn0"
+                            onclick="ButtonResetDistA()"
+                          >
+                            Reset
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><div class="category">dist B</div></td>
+                        <td>
+                          <div class="valueSmall" id="distB">88.88</div>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            class="btn"
+                            id="btn1"
+                            onclick="ButtonResetDistB()"
+                          >
+                            Reset
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><div class="category">totalDist</div></td>
+                        <td>
+                          <div class="valueSmall" id="totalDist">88.88</div>
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <td><div class="category">totalTime</div></td>
+                        <td>
+                          <div class="valueSmall" id="totalTime">88.88</div>
+                        </td>
+                        <td></td>
+                      </tr>
                     </table>
                   </td>
                 </tr>
-            </table>
-
-          </td>
-          <td>
-            <table border=5 bordercolor = red>
-              <tr>
-                <td>
-                   <div class="valueBig" id="speed">88.88</div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                    kmh
-                </td>
-              </tr>
-              <tr>
-                <td>
-                    <table border=5 bordercolor = red>
-                        <tr>
-                          <td><div class="category">Fahrzeit </div></td>
-                          <td><div class="valueSmall"  id="dailyTime"> 88.88 h</div></td>
-                        </tr>
-                        <tr>
-                          <td><div class="category" >TagesKM </div></td>
-                          <td><div class="valueSmall" id="dailyDist"> 88.88 km/h </div></td>
-                        </tr>
-                      </table>
-
+              </table>
+            </td>
+            <td>
+              <table>
+                <tr>
+                  <td>
+                    <div class="valueBig" id="speed">88.88</div>
                   </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
+                </tr>
+                <tr>
+                  <td><div class="category"></div></td>
+                </tr>
+                <tr>
+                  <td>
+                    <table>
+                      <tr>
+                        <td><div class="category">mvtime</div></td>
+                        <td>
+                          <div class="valueSmall" id="dailyTime">88.88</div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><div class="category">dailyDist</div></td>
+                        <td>
+                          <div class="valueSmall" id="dailyDist">88.88</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
     </div>
-
   </body>
 
   <script type="text/javascript">
@@ -402,7 +309,6 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       xhttp.send();
     }
 
-
     // function to handle the response from the ESP
     function response() {
       var message;
@@ -410,57 +316,56 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       var xmldoc;
       var dt = new Date();
 
-
       xmlResponse = xmlHttp.responseXML;
-if(xmlResponse){
-      // console.log("xmlResponse", xmlResponse)
+      if (xmlResponse) {
+        // console.log("xmlResponse", xmlResponse)
 
-      // get host date and time
-      document.getElementById("time").innerText = dt.toLocaleTimeString();
-      document.getElementById("date").innerText = dt.toLocaleDateString();
+        // get host date and time
+        document.getElementById("time").innerText = dt.toLocaleTimeString();
+        document.getElementById("date").innerText = dt.toLocaleDateString();
 
+        xmldoc = xmlResponse.getElementsByTagName("SPEED");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("speed").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("DISTA");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("distA").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("DISTB");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("distB").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("TOTALDIST");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("totalDist").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("TOTALTIME");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("totalTime").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("DAILYTIME");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("dailyTime").innerText = message;
+        }
 
-      xmldoc = xmlResponse.getElementsByTagName("SPEED");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("speed").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("DISTA");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("distA").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("DISTB");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("distB").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("TOTALDIST");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("totalDist").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("TOTALTIME");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("totalTime").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("DAILYTIME");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("dailyTime").innerText = message;
-}
- 
-      xmldoc = xmlResponse.getElementsByTagName("DAILYDIST");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("dailyDist").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("POSITION");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("position").innerText = message;
- }}
+        xmldoc = xmlResponse.getElementsByTagName("DAILYDIST");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("dailyDist").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("POSITION");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("position").innerText = message;
+        }
+      }
     }
 
     // general processing code for the web page to ask for an XML steam
@@ -480,6 +385,7 @@ if(xmlResponse){
     }
   </script>
 </html>
+
 
 
 
