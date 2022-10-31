@@ -1,64 +1,3 @@
-/*
-
-
-  OK, ya ready for some fun HTML + CSS styling + javascript all in and undebuggable environment
-
-  one trick I've learned to how to debug HTML and CSS code.
-
-  get all your HTML code (from html to /html) and past it into this test site
-  muck with the HTML and CSS code until it's what you want
-  https://www.w3schools.com/html/tryit.asp?filename=tryhtml_intro
-
-  No clue how to debug javascrip other that write, compile, upload, refresh, guess, repeat
-
-
-  I'm using class designators to set styles and id's for data updating
-  for example:
-  the CSS class .tabledata defines with the cell will look like
-  <td><div class="tabledata" id = "switch"></div></td>
-
-  the XML code will update the data where id = "switch"
-  java script then uses getElementById
-  document.getElementById("switch").innerHTML="Switch is OFF";
-
-
-  .. now you can have the class define the look AND the class update the content, but you will then need
-  a class for every data field that must be updated, here's what that will look like
-  <td><div class="switch"></div></td>
-
-  the XML code will update the data where class = "switch"
-  java script then uses getElementsByClassName
-  document.getElementsByClassName("switch")[0].style.color=text_color;
-
-
-  the main general sections of a web page are the following and used here
-
-  <html>
-    <style>
-    // dump CSS style stuff in here
-    </style>
-    <body>
-      <header>
-      // put header code for cute banners here
-      </header>
-      <main>
-      // the buld of your web page contents
-      </main>
-      <footer>
-      // put cute footer (c) 2021 xyz inc type thing
-      </footer>
-    </body>
-    <script>
-    // you java code between these tags
-    </script>
-  </html>
-
-
-*/
-
-// note R"KEYWORD( html page code )KEYWORD";
-// again I hate strings, so char is it and this method let's us write naturally
-
 const char PAGE_MAIN[] PROGMEM = R"=====(
 
 <!DOCTYPE html>
@@ -88,11 +27,6 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
     div {
       padding: 0px 0px;
     }
-
-    /* td {
-      height: 20px;
-      padding: 3px 15px;
-    } */
     .btn {
       background-color: #000000;
       border: none;
@@ -111,8 +45,6 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       font-family: "Verdana", "Arial", sans-serif;
       font-weight: bold;
       font-size: 2vmin;
-
-      /* line-height: 50px; */
       padding: 0px 0px 0px 0px;
       color: #000000;
     }
@@ -120,7 +52,6 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       font-family: "Verdana", "Arial", sans-serif;
       font-weight: bold;
       font-size: 8vmin;
-      /* line-height: 50px; */
       padding: 0px 0px 0px 0px;
       color: #000000;
     }
@@ -130,7 +61,6 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
 
       font-weight: bold;
       font-size: 20vmin;
-      /* line-height: 150px; */
       padding: 0px 0px 0px 0px;
       margin: 0px 0px 0px 0px;
       color: #000000;
@@ -255,10 +185,8 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
   </body>
 
   <script type="text/javascript">
-    // global variable visible to all java functions
-    var xmlHttp = createXmlHttpObject();
+    const xmlHttp = createXmlHttpObject();
 
-    // function to create XML object
     function createXmlHttpObject() {
       if (window.XMLHttpRequest) {
         xmlHttp = new XMLHttpRequest();
@@ -268,18 +196,9 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       return xmlHttp;
     }
 
-    // function to handle button press from HTML code above
-    // and send a processing string back to server
-    // this processing string is use in the .on method
     function ButtonResetDistA() {
-      var xhttp = new XMLHttpRequest();
+      const xhttp = new XMLHttpRequest();
       var message;
-      // if you want to handle an immediate reply (like status from the ESP
-      // handling of the button press use this code
-      // since this button status from the ESP is in the main XML code
-      // we don't need this
-      // remember that if you want immediate processing feedbac you must send it
-      // in the ESP handling function and here
       /*
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -293,11 +212,8 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       xhttp.send();
     }
 
-    // function to handle button press from HTML code above
-    // and send a processing string back to server
-    // this processing string is use in the .on method
     function ButtonResetDistB() {
-      var xhttp = new XMLHttpRequest();
+      const xhttp = new XMLHttpRequest();
       /*
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -309,17 +225,14 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       xhttp.send();
     }
 
-    // function to handle the response from the ESP
     function response() {
       var message;
       var xmlResponse;
       var xmldoc;
-      var dt = new Date();
+      const dt = new Date();
 
       xmlResponse = xmlHttp.responseXML;
       if (xmlResponse) {
-        // console.log("xmlResponse", xmlResponse)
-
         // get host date and time
         document.getElementById("time").innerText = dt.toLocaleTimeString();
         document.getElementById("date").innerText = dt.toLocaleDateString();
@@ -368,26 +281,16 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       }
     }
 
-    // general processing code for the web page to ask for an XML steam
-    // this is actually why you need to keep sending data to the page to
-    // force this call with stuff like this
     // server.on("/xml", SendXML);
-    // otherwise the page will not request XML from the ESP, and updates will not happen
     function process() {
       if (xmlHttp.readyState == 0 || xmlHttp.readyState == 4) {
         xmlHttp.open("PUT", "xml", true);
         xmlHttp.onreadystatechange = response;
         xmlHttp.send(null);
       }
-      // you may have to play with this value, big pages need more porcessing time, and hence
-      // a longer timeout
       setTimeout("process()", 100);
     }
   </script>
 </html>
-
-
-
-
 
 )=====";

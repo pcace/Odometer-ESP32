@@ -210,18 +210,10 @@ void setup()
 
   uint8_t counter = 0;
 
-  // get the stack sizes
-  // void *SpStart = NULL;
-  // StackPtrAtStart = (void *)&SpStart;
-  // watermarkStart = uxTaskGetStackHighWaterMark(NULL);
-  // StackPtrEnd = StackPtrAtStart - watermarkStart;
-
   Serial.begin(9600);
   Serial2.begin(9600);
 
   disableCore0WDT();
-
-  //  disableCore1WDT();
 
   Serial.println("starting server");
 
@@ -292,8 +284,6 @@ void loop()
 {
   ArduinoOTA.handle();
 
-  // void *SpActual = NULL;
-  // Serial.printf("Free Stack at actual position is: %d \r\n", (uint32_t)&SpActual - (uint32_t)StackPtrEnd);
   while (gps.available(Serial2))
 
   {

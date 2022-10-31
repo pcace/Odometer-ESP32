@@ -862,28 +862,6 @@
               "font": "mono",
               "textAlign": "middle"
             }
-          },
-          "07090ef0-cea5-4cbe-2358-db31a6d1870f": {
-            "id": "07090ef0-cea5-4cbe-2358-db31a6d1870f",
-            "type": "text",
-            "name": "Text",
-            "parentId": "page",
-            "childIndex": 27,
-            "point": [
-              124,
-              -108.14
-            ],
-            "rotation": 0,
-            "text": "100% height Table example:\nhttp://jsfiddle.net/cQqUF/",
-            "style": {
-              "color": "black",
-              "size": "small",
-              "isFilled": false,
-              "dash": "draw",
-              "scale": 1,
-              "font": "script",
-              "textAlign": "middle"
-            }
           }
         },
         "bindings": {}
