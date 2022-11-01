@@ -41,20 +41,22 @@ gps_fix currentFix, prevFix; // This holds on to the latest values
 
 // variables to store measure data and sensor states
 
-float distA = 1;      // EEPROM Adress: 0
-float distB = 2;      // EEPROM Adress: 1
-float totalDist = 30; // EEPROM Adress: 2
-float totalTime = 04; // EEPROM Adress: 3
-float dailyTime = 5;  // EEPROM Adress: 4
-float dailyDist = 6;  // EEPROM Adress: 5
-float speed = 11;
+float distA;
+float distB;
+float totalDist;
+float totalTime;
+float dailyTime;
+float dailyDist;
+
+float speed = 0.00;
+
 int32_t currentLat, currentLon = 0;
 int32_t prevLat, prevLon = 0;
 bool hadFix = false;
 
 char XML[2048];
 
-char buf[256];
+char buf[512];
 IPAddress Actual_IP;
 
 IPAddress PageIP(192, 168, 1, 1);
@@ -67,7 +69,7 @@ void ButtonResetDistA()
 {
 
   Debug.println("ButtonA press-++++++++++++++++++++++++++++++++");
-  distA = distA * 2;
+  distA = 0;
   server.send(200, "text/plain", ""); // Send web page
 }
 
@@ -75,6 +77,7 @@ void ButtonResetDistB()
 {
 
   Debug.println("ButtonB press-++++++++++++++++++++++++++++++++");
+  distB = 0;
   server.send(200, "text/plain", ""); // Send web page
 }
 
@@ -92,7 +95,9 @@ void SendXML()
 
   if (currentFix.valid.speed)
   {
-    sprintf(buf, "<SPEED>%.02f</SPEED>\n", speed);
+    // sprintf(buf, "<SPEED>%.02f</SPEED>\n", speed);
+    sprintf(&buf[strlen(buf)], "<SPEED>%.02f</SPEED>\n", speed);
+
     strcat(XML, buf);
   }
   else
@@ -103,7 +108,7 @@ void SendXML()
 
   if (currentFix.valid.location)
   {
-    sprintf(buf, "<DISTA>%.05f</DISTA>\n", distA);
+    sprintf(buf, "<DISTA>%.02f</DISTA>\n", distA);
     strcat(XML, buf);
   }
   else
@@ -114,7 +119,7 @@ void SendXML()
 
   if (currentFix.valid.location)
   {
-    sprintf(buf, "<DISTB>%d.%d</DISTB>\n", (int)(distB), abs((int)(distB * 10) - ((int)(distB)*10)));
+    sprintf(buf, "<DISTB>%.02f</DISTB>\n", distB);
     strcat(XML, buf);
   }
   else
@@ -125,7 +130,8 @@ void SendXML()
 
   if (currentFix.valid.location)
   {
-    sprintf(buf, "<TOTALDIST>%d.%d</TOTALDIST>\n", (int)(totalDist), abs((int)(totalDist * 10) - ((int)(totalDist)*10)));
+    sprintf(buf, "<TOTALDIST>%.02f</TOTALDIST>\n", totalDist);
+    // sprintf(buf, "<TOTALDIST>%d.%d</TOTALDIST>\n", (int)(totalDist), abs((int)(totalDist * 10) - ((int)(totalDist)*10)));
     strcat(XML, buf);
   }
   else
@@ -158,7 +164,8 @@ void SendXML()
 
   if (currentFix.valid.location)
   {
-    sprintf(buf, "<DAILYDIST>%d.%d</DAILYDIST>\n", (int)(dailyDist), abs((int)(dailyDist * 10) - ((int)(dailyDist)*10)));
+    sprintf(buf, "<DAILYDIST>%.02f</DAILYDIST>\n", dailyDist);
+    // sprintf(buf, "<DAILYDIST>%d.%d</DAILYDIST>\n", (int)(dailyDist), abs((int)(dailyDist * 10) - ((int)(dailyDist)*10)));
     strcat(XML, buf);
   }
   else
@@ -169,8 +176,7 @@ void SendXML()
 
   if (currentFix.valid.location)
   {
-    sprintf(buf, "<POSITION>%f, %f</POSITION>\n", currentLat, currentLon);
-    // dtostrf(val, 4, 6, buf);
+    sprintf(buf, "<POSITION>%d, %d</POSITION>\n", currentLat, currentLon);
     strcat(XML, buf);
   }
   else
@@ -181,7 +187,7 @@ void SendXML()
 
   strcat(XML, "</Data>\n");
 
-  // Serial2.println(XML);
+  // // Serial2.println(XML);
 
   server.send(200, "text/xml", XML);
 }
@@ -207,9 +213,14 @@ void printWifiStatus()
 
 void setup()
 {
-
-  uint8_t counter = 0;
-
+  EEPROM.begin(sizeof(float) * 5);
+  float distA = EEPROM.get(sizeof(float) * 0, distA);
+  float distB = EEPROM.get(sizeof(float) * 1, distB);
+  float totalDist = EEPROM.get(sizeof(float) * 2, totalDist);
+  float totalTime = EEPROM.get(sizeof(float) * 3, totalTime);
+  float dailyTime = EEPROM.get(sizeof(float) * 4, dailyTime);
+  float dailyDist = EEPROM.get(sizeof(float) * 5, dailyDist);
+  // uint8_t counter = 0;
   Serial.begin(9600);
   Serial2.begin(9600);
 
@@ -282,6 +293,7 @@ void setup()
 
 void loop()
 {
+  aktMillis = millis();
   ArduinoOTA.handle();
 
   while (gps.available(Serial2))
@@ -289,79 +301,60 @@ void loop()
   {
     currentFix = gps.read();
 
-    // speed = currentFix.speed_kph();
-    // Debug.print("speed: ");
-    // Serial.print("speed: ");
-    // Debug.println(speed);
-    // // Serial.println(speed);
-
-    // Debug.println("Sattelites");
-    // Debug.print(currentFix.satellites);
-
-    // Debug.println("hdop");
-    // Debug.print(currentFix.hdop);
-    // Debug.println("vdop");
-    // Debug.print(currentFix.vdop);
-
-    if (currentFix.valid.location)
+    if (currentFix.speed_kph() > 0) // filter out everything below 1km/h
     {
-      currentLat = currentFix.location.lat();
-      currentLon = currentFix.location.lon();
-      if ((currentLat != prevLat) && (currentLon != prevLon))
+      speed = currentFix.speed_kph(); //> 1 ? currentFix.speed_kph() : 0;
+      Debug.print("speed: ");
+      Debug.println(speed);
+      // Serial.println(speed);
+
+      Debug.print("Sattelites: ");
+      Debug.println(currentFix.satellites);
+
+      Debug.print("hdop");
+      Debug.println(currentFix.hdop);
+      Debug.print("vdop");
+      Debug.println(currentFix.vdop);
+
+      if (currentFix.valid.location)
       {
-        if (hadFix) // prevent 0 prevFix with current location the first time it has a fix
+        currentLat = currentFix.location.lat();
+        currentLon = currentFix.location.lon();
+
+        if ((currentLat != prevLat) && (currentLon != prevLon))
         {
-          Debug.println(distA);
-          Debug.println(currentLat);
-          Debug.println(prevLat);
-          Debug.println(currentLon);
-          Debug.println(prevLon);
-          distA = distA + currentFix.location.DistanceKm(prevFix.location);
+          if (hadFix) // prevent 0 prevFix with current location the first time it has a fix
+          {
+            float distance = currentFix.location.DistanceKm(prevFix.location);
+            distA = distA + distance;
+            EEPROM.put(sizeof(float) * 0, distA);
+            distB = distB + distance;
+            EEPROM.put(sizeof(float) * 1, distB);
+            totalDist = totalDist + distance;
+            EEPROM.put(sizeof(float) * 2, totalDist);
+          }
+          prevLat = currentLat;
+          prevLon = currentLon;
+          prevFix = currentFix;
+          hadFix = true;
+          Debug.print(distA);
+          Debug.println(F(" km"));
         }
-        prevLat = currentLat;
-        prevLon = currentLon;
-        hadFix = true;
+      }
+      else
+      {
+        Debug.println(", no Location!");
       }
 
-      Debug.print(distA);
-      Debug.println(F(" km"));
-
-      // Debug.print("dist: ");
-      // Debug.println(distA);
-      // Debug.print(F("Location: "));
-      // Debug.print(currentFix.latitude(), 6);
-      // Debug.print(',');
-      // Debug.print(currentFix.longitude(), 6);
+      if (aktMillis - lastMillis >= INTERVALL)
+      {
+        totalTime = totalTime + (1 / 60 / 60);
+        EEPROM.put(sizeof(float) * 3, totalTime);
+        lastMillis = aktMillis;
+      }
     }
-    else
-    {
-      Debug.println(", no Location currentFix!");
-      Serial.println(", no Location currentFix!");
-    }
-
-    //   if (currentFix.valid.altitude)
-    //   {
-    //     Debug.print(F(", Altitude: "));
-    //     Serial.print(F(", Altitude: "));
-    //     Debug.print(currentFix.altitude());
-    //     Serial.print(currentFix.altitude());
-    //     Debug.println();
-    //     Serial.println();
-    //   }
-    //   else
-    //   {
-    //     Debug.println(", no Altitude FIX!");
-    //     Serial.println(", no Altitude FIX!");
-    //   }
   }
-
   // Debug-Handler
   Debug.handle();
-  aktMillis = millis();
-  if (aktMillis - lastMillis >= INTERVALL)
-  {
-    // Debug.print("Debug.print");
-    lastMillis = aktMillis;
-  }
   server.handleClient();
 }
