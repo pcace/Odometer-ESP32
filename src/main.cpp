@@ -1,3 +1,15 @@
+/**
+ * @file main.cpp
+ * @author mail@johannes-froelich.de
+ * @brief WORKINPROGRESS! a bicyclie / motorcycle tripComputer with Wifi interface
+ *
+ * @version 0.1
+ * @date 2022-11-02
+ *
+ * @copyright Copyright (c) 2022
+ *
+ */
+
 #include <Wifi.h>       // standard library
 #include <WebServer.h>  // standard library
 #include "SuperMon.h"   // .h file that stores your html page code
@@ -5,6 +17,7 @@
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <NMEAGPS.h>
+#include <Preferences.h>
 
 #include "DebugClass.h"
 uint32_t aktMillis, lastMillis, lastMillis_h;
@@ -13,10 +26,6 @@ const uint32_t INTERVALL = 1000; // 1 Minute
 
 NMEAGPS gps;                 // This parses the GPS characters
 gps_fix currentFix, prevFix; // This holds on to the latest values
-
-// Storage:
-#include <EEPROM.h>
-#define EEPROM_SIZE 12
 
 #if !defined(NMEAGPS_PARSE_RMC) & \
     !defined(NMEAGPS_PARSE_GGA) & \
@@ -40,6 +49,10 @@ gps_fix currentFix, prevFix; // This holds on to the latest values
 #define HOST_NAME "ESP_Tacho"
 
 // variables to store measure data and sensor states
+
+Preferences prefs;
+
+float floatRetrieve[6];
 
 float distA;
 float distB;
@@ -165,7 +178,6 @@ void SendXML()
   if (currentFix.valid.location)
   {
     sprintf(buf, "<DAILYDIST>%.02f</DAILYDIST>\n", dailyDist);
-    // sprintf(buf, "<DAILYDIST>%d.%d</DAILYDIST>\n", (int)(dailyDist), abs((int)(dailyDist * 10) - ((int)(dailyDist)*10)));
     strcat(XML, buf);
   }
   else
@@ -186,9 +198,6 @@ void SendXML()
   }
 
   strcat(XML, "</Data>\n");
-
-  // // Serial2.println(XML);
-
   server.send(200, "text/xml", XML);
 }
 
@@ -213,13 +222,15 @@ void printWifiStatus()
 
 void setup()
 {
-  EEPROM.begin(sizeof(float) * 5);
-  float distA = EEPROM.get(sizeof(float) * 0, distA);
-  float distB = EEPROM.get(sizeof(float) * 1, distB);
-  float totalDist = EEPROM.get(sizeof(float) * 2, totalDist);
-  float totalTime = EEPROM.get(sizeof(float) * 3, totalTime);
-  float dailyTime = EEPROM.get(sizeof(float) * 4, dailyTime);
-  float dailyDist = EEPROM.get(sizeof(float) * 5, dailyDist);
+  prefs.begin("FloatArray");
+  prefs.getBytes("FloatArray", &floatRetrieve, sizeof(floatRetrieve));
+
+  float distA = floatRetrieve[0];
+  float distB = floatRetrieve[1];
+  float totalDist = floatRetrieve[2];
+  float totalTime = floatRetrieve[3];
+  float dailyTime = floatRetrieve[4];
+  float dailyDist = floatRetrieve[5];
   // uint8_t counter = 0;
   Serial.begin(9600);
   Serial2.begin(9600);
@@ -327,11 +338,8 @@ void loop()
           {
             float distance = currentFix.location.DistanceKm(prevFix.location);
             distA = distA + distance;
-            EEPROM.put(sizeof(float) * 0, distA);
             distB = distB + distance;
-            EEPROM.put(sizeof(float) * 1, distB);
             totalDist = totalDist + distance;
-            EEPROM.put(sizeof(float) * 2, totalDist);
           }
           prevLat = currentLat;
           prevLon = currentLon;
@@ -348,8 +356,11 @@ void loop()
 
       if (aktMillis - lastMillis >= INTERVALL)
       {
+        // save all Values to Pref file every second... stupid? idk...
         totalTime = totalTime + (1 / 60 / 60);
-        EEPROM.put(sizeof(float) * 3, totalTime);
+        float floatStore[6] = {distA, distB, totalDist, totalTime, dailyTime, dailyDist};
+        prefs.putBytes("FloatArray", (byte *)(&floatStore), sizeof(floatStore));
+
         lastMillis = aktMillis;
       }
     }
