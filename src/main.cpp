@@ -225,12 +225,12 @@ void setup()
   prefs.begin("FloatArray");
   prefs.getBytes("FloatArray", &floatRetrieve, sizeof(floatRetrieve));
 
-  float distA = floatRetrieve[0];
-  float distB = floatRetrieve[1];
-  float totalDist = floatRetrieve[2];
-  float totalTime = floatRetrieve[3];
-  float dailyTime = floatRetrieve[4];
-  float dailyDist = floatRetrieve[5];
+  distA = floatRetrieve[0];
+  distB = floatRetrieve[1];
+  totalDist = floatRetrieve[2];
+  totalTime = floatRetrieve[3];
+  dailyTime = floatRetrieve[4];
+  dailyDist = floatRetrieve[5];
   // uint8_t counter = 0;
   Serial.begin(9600);
   Serial2.begin(9600);
