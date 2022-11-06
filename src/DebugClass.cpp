@@ -28,7 +28,7 @@ void DebugClass::setHelp() {
   _help+=_hostName;
   _help+=" IP: ";
   _help+=WiFi.localIP().toString();
-  _help+="\n\rKommandos (mit <ENTER> beenden): q = Quit h = Hilfe s = Speicher";
+  _help+="\n\rKommandos (mit <ENTER> beenden): q = Quit h = Hilfe s = Speicher r = reset all Values";
   if (_rebootEnabled) _help+=" r = Reboot";
   // Serial.println(_help.length());
   // Serial.println(_help);

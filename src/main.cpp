@@ -18,14 +18,16 @@
 #include <WiFiUdp.h>
 #include <NMEAGPS.h>
 #include <Preferences.h>
+#include <Time.h>
+#include <helper.h>
 
 #include "DebugClass.h"
 uint32_t aktMillis, lastMillis, lastMillis_h;
 // const uint32_t INTERVALL = 1 * 10 * 1000;  // 1 Minute
 const uint32_t INTERVALL = 1000; // 1 Minute
 
-NMEAGPS gps;                 // This parses the GPS characters
-gps_fix currentFix, prevFix; // This holds on to the latest values
+NMEAGPS gps;                           // This parses the GPS characters
+gps_fix currentFix, prevFix, firstFix; // This holds on to the latest values
 
 #if !defined(NMEAGPS_PARSE_RMC) & \
     !defined(NMEAGPS_PARSE_GGA) & \
@@ -52,18 +54,32 @@ gps_fix currentFix, prevFix; // This holds on to the latest values
 
 Preferences prefs;
 
-float floatRetrieve[6];
+float floatRetrieve[7];
 
 float distA;
 float distB;
 float totalDist;
-float totalTime;
-float dailyTime;
+long int totalTime;
+long int dailyTime;
 float dailyDist;
 
-float speed = 0.00;
+uint16_t hoursDaily;
+uint8_t minutesDaily;
+uint8_t secondsDaily;
 
-int32_t currentLat, currentLon = 0;
+uint16_t hoursTotal;
+uint8_t minutesTotal;
+uint8_t secondsTotal;
+
+bool timeSet = false;
+uint32_t startTime;
+
+float speed = 0.00;
+float totalSpeedAverage;
+float speedAverage;
+
+int32_t currentLat,
+    currentLon = 0;
 int32_t prevLat, prevLon = 0;
 bool hadFix = false;
 
@@ -108,9 +124,7 @@ void SendXML()
 
   if (currentFix.valid.speed)
   {
-    // sprintf(buf, "<SPEED>%.02f</SPEED>\n", speed);
     sprintf(&buf[strlen(buf)], "<SPEED>%.02f</SPEED>\n", speed);
-
     strcat(XML, buf);
   }
   else
@@ -119,72 +133,25 @@ void SendXML()
     strcat(XML, buf);
   }
 
-  if (currentFix.valid.location)
-  {
-    sprintf(buf, "<DISTA>%.02f</DISTA>\n", distA);
-    strcat(XML, buf);
-  }
-  else
-  {
-    sprintf(buf, "<DISTA>no Fix</DISTA>\n");
-    strcat(XML, buf);
-  }
+  sprintf(buf, "<DISTA>%.02f</DISTA>\n", distA);
+  strcat(XML, buf);
 
-  if (currentFix.valid.location)
-  {
-    sprintf(buf, "<DISTB>%.02f</DISTB>\n", distB);
-    strcat(XML, buf);
-  }
-  else
-  {
-    sprintf(buf, "<DISTB>no Fix</DISTB>\n");
-    strcat(XML, buf);
-  }
+  sprintf(buf, "<DISTB>%.02f</DISTB>\n", distB);
+  strcat(XML, buf);
 
-  if (currentFix.valid.location)
-  {
-    sprintf(buf, "<TOTALDIST>%.02f</TOTALDIST>\n", totalDist);
-    // sprintf(buf, "<TOTALDIST>%d.%d</TOTALDIST>\n", (int)(totalDist), abs((int)(totalDist * 10) - ((int)(totalDist)*10)));
-    strcat(XML, buf);
-  }
-  else
-  {
-    sprintf(buf, "<TOTALDIST>no Fix</TOTALDIST>\n");
-    strcat(XML, buf);
-  }
+  sprintf(buf, "<TOTALDIST>%.02f</TOTALDIST>\n", totalDist);
+  // sprintf(buf, "<TOTALDIST>%d.%d</TOTALDIST>\n", (int)(totalDist), abs((int)(totalDist * 10) - ((int)(totalDist)*10)));
+  strcat(XML, buf);
 
-  if (currentFix.valid.date && currentFix.valid.time)
-  {
-    sprintf(buf, "<TOTALTIME>%d.%d</TOTALTIME>\n", (int)(totalTime), abs((int)(totalTime * 10) - ((int)(totalTime)*10)));
-    strcat(XML, buf);
-  }
-  else
-  {
-    sprintf(buf, "<TOTALTIME>no Fix</TOTALTIME>\n");
-    strcat(XML, buf);
-  }
+  sprintf(buf, "<TOTALTIME>%02d:%02d:%02d</TOTALTIME>\n", hoursTotal, minutesTotal, secondsTotal);
+  strcat(XML, buf);
 
-  if (currentFix.valid.date && currentFix.valid.time)
-  {
-    sprintf(buf, "<DAILYTIME>%d.%d</DAILYTIME>\n", (int)(dailyTime), abs((int)(dailyTime * 10) - ((int)(dailyTime)*10)));
-    strcat(XML, buf);
-  }
-  else
-  {
-    sprintf(buf, "<DAILYTIME>no Fix</DAILYTIME>\n");
-    strcat(XML, buf);
-  }
+  // sprintf(buf, "<DAILYTIME>%d.%d</DAILYTIME>\n", (int)(dailyTime), abs((int)(dailyTime * 10) - ((int)(dailyTime)*10)));
+  sprintf(buf, "<DAILYTIME>%02d:%02d:%02d</DAILYTIME>\n", hoursDaily, minutesDaily, secondsDaily);
+  strcat(XML, buf);
 
-  if (currentFix.valid.location)
-  {
-    sprintf(buf, "<DAILYDIST>%.02f</DAILYDIST>\n", dailyDist);
-    strcat(XML, buf);
-  }
-  else
-  {
-    sprintf(buf, "<DAILYDIST>no Fix</DAILYDIST>\n");
-    strcat(XML, buf);
-  }
+  sprintf(buf, "<DAILYDIST>%.02f</DAILYDIST>\n", dailyDist);
+  strcat(XML, buf);
 
   if (currentFix.valid.location)
   {
@@ -224,14 +191,18 @@ void setup()
 {
   prefs.begin("FloatArray");
   prefs.getBytes("FloatArray", &floatRetrieve, sizeof(floatRetrieve));
-
+  // prefs.clear();
   distA = floatRetrieve[0];
   distB = floatRetrieve[1];
   totalDist = floatRetrieve[2];
   totalTime = floatRetrieve[3];
-  dailyTime = floatRetrieve[4];
-  dailyDist = floatRetrieve[5];
+  // dailyTime = floatRetrieve[4];
+  dailyTime = 0;
+  dailyDist = 0;
+  // dailyDist = floatRetrieve[5];
+  totalSpeedAverage = floatRetrieve[6];
   // uint8_t counter = 0;
+
   Serial.begin(9600);
   Serial2.begin(9600);
 
@@ -295,9 +266,9 @@ void setup()
 
   ArduinoOTA.begin();
 
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  // Serial.println("Ready");
+  // Serial.print("IP address: ");
+  // Serial.println(WiFi.localIP());
 
   Debug.begin(HOST_NAME);
 }
@@ -312,55 +283,61 @@ void loop()
   {
     currentFix = gps.read();
 
-    if (currentFix.speed_kph() > 0) // filter out everything below 1km/h
+    if (currentFix.speed_kph() > 0 && currentFix.valid.location && currentFix.valid.time) // filter out everything below 1km/h
     {
+      if (!timeSet) // set the startTime once after Start
+      {
+        startTime = currentFix.dateTime;
+        timeSet = true;
+      }
+      // Speed in Km/h
       speed = currentFix.speed_kph(); //> 1 ? currentFix.speed_kph() : 0;
-      Debug.print("speed: ");
-      Debug.println(speed);
-      // Serial.println(speed);
 
-      Debug.print("Sattelites: ");
-      Debug.println(currentFix.satellites);
+      // current Lat/Lon
+      currentLat = currentFix.location.lat();
+      currentLon = currentFix.location.lon();
 
-      Debug.print("hdop");
-      Debug.println(currentFix.hdop);
-      Debug.print("vdop");
-      Debug.println(currentFix.vdop);
-
-      if (currentFix.valid.location)
+      // set distA / B and Total distance
+      // only set on second loop, to make sure there is a distance to be alculated
+      if (hadFix) // prevent 0 prevFix with current location the first time it has a fix
       {
-        currentLat = currentFix.location.lat();
-        currentLon = currentFix.location.lon();
 
-        if ((currentLat != prevLat) && (currentLon != prevLon))
-        {
-          if (hadFix) // prevent 0 prevFix with current location the first time it has a fix
-          {
-            float distance = currentFix.location.DistanceKm(prevFix.location);
-            distA = distA + distance;
-            distB = distB + distance;
-            totalDist = totalDist + distance;
-          }
-          prevLat = currentLat;
-          prevLon = currentLon;
-          prevFix = currentFix;
-          hadFix = true;
-          Debug.print(distA);
-          Debug.println(F(" km"));
-        }
-      }
-      else
-      {
-        Debug.println(", no Location!");
+        float distance = currentFix.location.DistanceKm(prevFix.location);
+        // set Distances / daily / total / a / b
+        distA = distA + distance;
+        distB = distB + distance;
+        totalDist = totalDist + distance;
+        dailyDist = dailyDist + distance;
+
+        // calc total Average:
+        totalSpeedAverage = ((totalSpeedAverage * totalTime) + speed) / (totalTime + 1);
+        speedAverage = ((speedAverage * dailyTime) + speed) / (dailyTime + 1);
+        Debug.print("TotalSpeedAverage: ");
+        Debug.println(totalSpeedAverage);
+        Debug.print("speedAverage: ");
+        Debug.println(speedAverage);
+        Debug.print("dailyTime: ");
+        Debug.println(dailyTime);
       }
 
+      // set Total Time
+      totalTime = totalTime + 1.0;
+      dailyTime = dailyTime + 1.0;
+      secondsToHMS(totalTime, hoursTotal, minutesTotal, secondsTotal);
+
+      // set runtime in seconds from start
+      uint32_t timeDelta = (currentFix.dateTime - startTime);
+      secondsToHMS(timeDelta, hoursDaily, minutesDaily, secondsDaily);
+
+      // set Fixes / reset fixes
+      prevFix = currentFix;
+      hadFix = true;
+
+      // do every Second i.e. save values to pref
       if (aktMillis - lastMillis >= INTERVALL)
       {
-        // save all Values to Pref file every second... stupid? idk...
-        totalTime = totalTime + (1 / 60 / 60);
-        float floatStore[6] = {distA, distB, totalDist, totalTime, dailyTime, dailyDist};
+        float floatStore[7] = {distA, distB, totalDist, totalTime, dailyTime, dailyDist, totalSpeedAverage};
         prefs.putBytes("FloatArray", (byte *)(&floatStore), sizeof(floatStore));
-
         lastMillis = aktMillis;
       }
     }
