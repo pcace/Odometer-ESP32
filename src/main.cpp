@@ -39,14 +39,14 @@ gps_fix currentFix, prevFix, firstFix; // This holds on to the latest values
 #error You must uncomment GPS_FIX_LOCATION in GPSfix_cfg.h!
 #endif
 
-#define USE_INTRANET
+// #define USE_INTRANET
 
 #include ".env"
 // #define LOCAL_SSID "wifi"
 // #define LOCAL_PASS "password"
 
-#define AP_SSID "TestWebSite"
-#define AP_PASS "023456789"
+#define AP_SSID "TripComputer"
+#define AP_PASS "12345678"
 
 #define HOST_NAME "ESP_Tacho"
 
@@ -140,13 +140,11 @@ void SendXML()
   strcat(XML, buf);
 
   sprintf(buf, "<TOTALDIST>%.02f</TOTALDIST>\n", totalDist);
-  // sprintf(buf, "<TOTALDIST>%d.%d</TOTALDIST>\n", (int)(totalDist), abs((int)(totalDist * 10) - ((int)(totalDist)*10)));
   strcat(XML, buf);
 
   sprintf(buf, "<TOTALTIME>%02d:%02d:%02d</TOTALTIME>\n", hoursTotal, minutesTotal, secondsTotal);
   strcat(XML, buf);
 
-  // sprintf(buf, "<DAILYTIME>%d.%d</DAILYTIME>\n", (int)(dailyTime), abs((int)(dailyTime * 10) - ((int)(dailyTime)*10)));
   sprintf(buf, "<DAILYTIME>%02d:%02d:%02d</DAILYTIME>\n", hoursDaily, minutesDaily, secondsDaily);
   strcat(XML, buf);
 
@@ -210,27 +208,22 @@ void setup()
 
   Serial.println("starting server");
 
-#ifdef USE_INTRANET
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(AP_SSID, AP_PASS);
   WiFi.begin(LOCAL_SSID, LOCAL_PASS);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
   }
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-  Actual_IP = WiFi.localIP();
-#endif
 
-#ifndef USE_INTRANET
-  WiFi.softAP(AP_SSID, AP_PASS);
   delay(100);
   WiFi.softAPConfig(PageIP, gateway, subnet);
   delay(100);
   Actual_IP = WiFi.softAPIP();
   Serial.print("IP address: ");
   Serial.println(Actual_IP);
-#endif
+  // #endif
 
   server.on("/", SendWebsite);
   server.on("/xml", SendXML);
@@ -265,11 +258,6 @@ void setup()
       else if (error == OTA_END_ERROR) Serial.println("End Failed"); });
 
   ArduinoOTA.begin();
-
-  // Serial.println("Ready");
-  // Serial.print("IP address: ");
-  // Serial.println(WiFi.localIP());
-
   Debug.begin(HOST_NAME);
 }
 
@@ -318,28 +306,29 @@ void loop()
         Debug.println(speedAverage);
         Debug.print("dailyTime: ");
         Debug.println(dailyTime);
+
+        // set Total Time
+        totalTime = totalTime + 1.0;
+        dailyTime = dailyTime + 1.0;
+        Debug.println(totalTime);
+        secondsToHMS(totalTime, hoursTotal, minutesTotal, secondsTotal);
+
+        // set runtime in seconds from start
+        uint32_t timeDelta = (currentFix.dateTime - startTime);
+        secondsToHMS(timeDelta, hoursDaily, minutesDaily, secondsDaily);
+
+        // do every Second i.e. save values to pref
+        if (aktMillis - lastMillis >= INTERVALL)
+        {
+          float floatStore[7] = {distA, distB, totalDist, totalTime, dailyTime, dailyDist, totalSpeedAverage};
+          prefs.putBytes("FloatArray", (byte *)(&floatStore), sizeof(floatStore));
+          lastMillis = aktMillis;
+        }
       }
-
-      // set Total Time
-      totalTime = totalTime + 1.0;
-      dailyTime = dailyTime + 1.0;
-      secondsToHMS(totalTime, hoursTotal, minutesTotal, secondsTotal);
-
-      // set runtime in seconds from start
-      uint32_t timeDelta = (currentFix.dateTime - startTime);
-      secondsToHMS(timeDelta, hoursDaily, minutesDaily, secondsDaily);
 
       // set Fixes / reset fixes
       prevFix = currentFix;
       hadFix = true;
-
-      // do every Second i.e. save values to pref
-      if (aktMillis - lastMillis >= INTERVALL)
-      {
-        float floatStore[7] = {distA, distB, totalDist, totalTime, dailyTime, dailyDist, totalSpeedAverage};
-        prefs.putBytes("FloatArray", (byte *)(&floatStore), sizeof(floatStore));
-        lastMillis = aktMillis;
-      }
     }
   }
   // Debug-Handler
