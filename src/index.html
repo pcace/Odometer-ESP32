@@ -1,8 +1,13 @@
 <!DOCTYPE html>
+<head>
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+</head>
 <html lang="en" class="js-focus-visible">
   <title>Tacho / Odometer</title>
   <style>
     html {
+      background-color: #000000;
       padding: 0;
       height: 100%;
       width: 100%;
@@ -208,8 +213,14 @@
       }
       */
 
-      xhttp.open("PUT", "BUTTON_0", false);
-      xhttp.send();
+      // xhttp.open("PUT", "BUTTON_0", false);
+      // xhttp.send();
+      // return confirm("reset DistA?");
+
+      if (confirm("Reset Dist A?")) {
+        xhttp.open("PUT", "BUTTON_0", false);
+        xhttp.send();
+      }
     }
 
     // function to handle button press from HTML code above
@@ -224,8 +235,12 @@
         }
       }
       */
-      xhttp.open("PUT", "BUTTON_1", false);
-      xhttp.send();
+
+      // confirm("reset DistA?");
+      if (confirm("Reset Dist B?")) {
+        xhttp.open("PUT", "BUTTON_1", false);
+        xhttp.send();
+      }
     }
 
     // function to handle the response from the ESP

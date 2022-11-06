@@ -1,11 +1,14 @@
 const char PAGE_MAIN[] PROGMEM = R"=====(
-
-
 <!DOCTYPE html>
+<head>
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+</head>
 <html lang="en" class="js-focus-visible">
   <title>Tacho / Odometer</title>
   <style>
     html {
+      background-color: #000000;
       padding: 0;
       height: 100%;
       width: 100%;
@@ -211,8 +214,14 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       }
       */
 
-      xhttp.open("PUT", "BUTTON_0", false);
-      xhttp.send();
+      // xhttp.open("PUT", "BUTTON_0", false);
+      // xhttp.send();
+      // return confirm("reset DistA?");
+
+      if (confirm("Reset DistA?")) {
+        xhttp.open("PUT", "BUTTON_0", false);
+        xhttp.send();
+      }
     }
 
     // function to handle button press from HTML code above
@@ -227,10 +236,13 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
         }
       }
       */
-      xhttp.open("PUT", "BUTTON_1", false);
-      xhttp.send();
-    }
 
+      // confirm("reset DistA?");
+      if (confirm("Reset DistB?")) {
+        xhttp.open("PUT", "BUTTON_1", false);
+        xhttp.send();
+      }
+    }
 
     // function to handle the response from the ESP
     function response() {
@@ -239,57 +251,56 @@ const char PAGE_MAIN[] PROGMEM = R"=====(
       var xmldoc;
       var dt = new Date();
 
-
       xmlResponse = xmlHttp.responseXML;
-if(xmlResponse){
-      // console.log("xmlResponse", xmlResponse)
+      if (xmlResponse) {
+        // console.log("xmlResponse", xmlResponse)
 
-      // get host date and time
-      document.getElementById("time").innerText = dt.toLocaleTimeString();
-      document.getElementById("date").innerText = dt.toLocaleDateString();
+        // get host date and time
+        document.getElementById("time").innerText = dt.toLocaleTimeString();
+        document.getElementById("date").innerText = dt.toLocaleDateString();
 
+        xmldoc = xmlResponse.getElementsByTagName("SPEED");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("speed").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("DISTA");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("distA").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("DISTB");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("distB").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("TOTALDIST");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("totalDist").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("TOTALTIME");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("totalTime").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("DAILYTIME");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("dailyTime").innerText = message;
+        }
 
-      xmldoc = xmlResponse.getElementsByTagName("SPEED");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("speed").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("DISTA");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("distA").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("DISTB");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("distB").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("TOTALDIST");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("totalDist").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("TOTALTIME");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("totalTime").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("DAILYTIME");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("dailyTime").innerText = message;
-}
- 
-      xmldoc = xmlResponse.getElementsByTagName("DAILYDIST");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("dailyDist").innerText = message;
- }
-      xmldoc = xmlResponse.getElementsByTagName("POSITION");
-      if(xmldoc){
-      message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("position").innerText = message;
- }}
+        xmldoc = xmlResponse.getElementsByTagName("DAILYDIST");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("dailyDist").innerText = message;
+        }
+        xmldoc = xmlResponse.getElementsByTagName("POSITION");
+        if (xmldoc) {
+          message = xmldoc[0].firstChild.nodeValue;
+          document.getElementById("position").innerText = message;
+        }
+      }
     }
 
     // general processing code for the web page to ask for an XML steam
